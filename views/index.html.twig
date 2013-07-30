@@ -7,6 +7,12 @@
     <style type="text/css">
     {% include 'styles.css' %}
     </style>
+	<script type="text/javascript">
+{% include 'jquery-2.0.0.js' %}
+
+
+{% include 'jquery.cookie.js' %}
+	</script>
 </head>
 <body>
 
@@ -19,106 +25,377 @@
         </div>
         <div id="bd">
             <div class="yui-g">
-                Adding the repository to <em>composer.json</em>:
-                <pre><code>{
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "{{ url }}"
-        }
-    ]
-}</code></pre>
+                Adding following to your <em>dev/composer.json</em>:
+                <pre><code id="composer-json"></code></pre>
+				<script>
+					var composerurl = '{{ url }}';
+				</script>
 
-                Filter by package name:
-                <input type="text" id="search" autocomplete="off" autofocus />
+				<div style="display: none;">
+				Install command:
+				<pre><code id="composer-json-short"></code></pre>
+				</div>
 
-                {% for name, package in packages %}
-                    <h3 id="{{ package.highest.name }}">{{ package.highest.name }}</h3>
-                    {% if package.highest.description %}
-                        <p>{{ package.highest.description }}</p>
-                    {% endif %}
-                    <table>
-                        {% if package.highest.homepage %}
-                            <tr>
-                                <th>Homepage</th>
-                                <td><a href="{{ package.highest.homepage }}">{{ package.highest.homepage }}</a></td>
-                            </tr>
-                        {% endif %}
-                        {% if package.highest.license %}
-                            <tr>
-                                <th>License</th>
-                                <td>{{ package.highest.license|join(', ') }}</td>
-                            </tr>
-                        {% endif %}
-                        {% if package.highest.authors %}
-                            <tr>
-                                <th>Authors</th>
-                                <td>
-                                    {% for author in package.highest.authors %}
-                                        {%- if author.homepage -%}
-                                            <a href="{{ author.homepage }}">{{ author.name }}</a>
-                                        {%- else -%}
-                                            {{ author.name }}
-                                        {%- endif -%}
-                                        {%- if not loop.last -%}, {% endif -%}
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                        {% endif %}
-                        <tr>
-                            <th>Releases</th>
-                            <td>
-                                {% for version in package.versions %}
-                                    {%- if version.distType -%}
-                                        <a href="{{ version.distUrl }}" title="{{ version.distReference }}">{{ version.prettyVersion }}</a>
-                                    {%- else -%}
-                                        <a href="{{ version.sourceUrl }}" title="{{ version.sourceReference }}">{{ version.prettyVersion }}</a>
-                                    {%- endif -%}
-                                    {%- if not loop.last -%}, {% endif -%}
-                                {% endfor %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Required by</th>
-                            <td>
-                                {% set package_dependencies = attribute(dependencies, name) %}
-                                {% if package_dependencies|length %}
-                                    <ul>
-                                        {% for dependency in package_dependencies %}
-                                            <li><a href="#{{ dependency }}">{{ dependency }}</a></li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
-                {% endfor %}
+                <input type="text" id="search" autocomplete="off" value="Filter by package name ..." />
+
+				<div class="packages">
+
+					{% for name, package in packages %}
+						<div class="package">
+							<h3 class="header">{{ package.highest.name }}</h3>
+							{% if package.highest.description %}
+								<p>{{ package.highest.description }}</p>
+							{% endif %}
+
+							<div class="detail">
+
+								<h3 class="details-h3">{{ package.highest.name }}</h3>
+								<div class="keywords">
+									{% if package.highest.keywords %}
+										{% for keyword in package.highest.keywords %}
+											<p class="keyword">{{ keyword }}</p>
+										{% endfor %}
+									{% endif %}
+								</div>
+								<div style="clear:both;"></div>
+
+								{% if package.highest.description %}
+									<p>{{ package.highest.description }}</p>
+								{% endif %}
+								<table cellpadding="0" cellspacing="0" border="0">
+
+									{% if package.highest.authors %}
+									<tr>
+										<td>Maintainer:</td>
+										<td>
+											{% for author in package.highest.authors %}
+											<a href="{{ author.homepage }}">{{ author.name }}</a> <a href="mailto:{{ author.email }}">{{ author.email }}</a>
+											{% endfor %}
+										</td>
+									</tr>
+									{% endif %}
+
+									{% if package.highest.homepage %}
+									<tr>
+										<td>Homepage:</td>
+										<td><a href="{{ package.highest.homepage }}">{{ package.highest.homepage }}</a></td>
+									</tr>
+									{% endif %}
+
+									{% if package.highest.prettyVersion %}
+									<tr>
+										<td>Current Version:</td>
+										<td>{{ package.highest.prettyVersion }}</td>
+									</tr>
+									{% endif %}
+
+									{% if package.highest.sourceReference %}
+									<tr>
+										<td>Reference:</td>
+										<td>{{ package.highest.sourceReference }}</td>
+									</tr>
+									{% endif %}
+
+									{% if package.highest.sourceUrl %}
+									<tr>
+										<td>Source:</td>
+										<td><a href="{{ package.highest.sourceUrl }}">{{ package.highest.sourceUrl }}</a></td>
+									</tr>
+									{% endif %}
+
+									{% if package.highest.sourceReference and package.highest.prettyVersion %}
+									<tr>
+										<td>Reference Path:</td>
+										<td><a href="{{ package.highest.sourceUrl }}/tags/{{ package.highest.prettyVersion }}">{{ package.highest.sourceUrl }}/tags/{{ package.highest.prettyVersion }}</a></td>
+									</tr>
+									{% endif %}
+
+								</table>
+
+								<div class="version-info">
+									{% for version in package.versions %}
+									<a href="#" name="{{ version.name|replace({'/':'-'}) }}-{{ version.prettyVersion }}"></a>
+									<div class="version">
+										<script type="text/javascript">
+										jQuery('.version:last').data({'name': '{{ version.name }}'.replace("/", "#"), 'version': '{{ version.prettyVersion }}'});
+										</script>
+										<h4>{{ version.name }} - {{ version.prettyVersion }}</h4>
+										<span class="addtocomposer" data-name="{{ version.name|replace({'/':'#'}) }}" data-version="{{ version.prettyVersion }}">add</span>
+										<div class="clearboth"></div>
+										<div class="version-detail">
+											<p class="require-code"><pre><code>"require": {
+	"{{ version.name }}": "{{ version.prettyVersion }}"
+}</code></pre></p>
+
+											<!-- AUTHOR -->
+											{% if version.authors %}
+												<hr/>
+												<p>Authors</p>
+
+												<ul>
+												{% for author in version.authors %}
+													<li><a href="{{ author.homepage }}">{{ author.name }}</a> <a href="mailto:{{ author.email }}">{{ author.email }}</a></li>
+												{% endfor %}
+												</ul>
+											{% endif %}
+											<!-- AUTHOR -->
+
+											<!-- REQUIRES -->
+											{% if version.requires %}
+												<hr/>
+												<p>Requires</p>
+												<ul class="requires">
+													{% for requires in version.requires %}
+														<li><span>{{ requires.target }}</span>: {{ requires.constraint.operator }} {{ requires.constraint.prettyString }}</li>
+													{% endfor %}
+												</ul>
+												{% endif %}
+											<!-- REQUIRES -->
+
+											<!-- PROVIDES -->
+											{% if version.provides %}
+											<hr/>
+											<p>Provides</p>
+
+											<ul class="requires">
+												{% for provides in version.provides %}
+												<li><span>{{ provides.target }}</span>: {{ provides.constraint.operator }} {{ provides.constraint.prettyString }}</li>
+												{% endfor %}
+											</ul>
+											{% endif %}
+											<!-- PROVIDES -->
+
+											<!-- CONFLICTS -->
+											{% if version.conflicts %}
+											<hr/>
+											<p>Conflicts</p>
+
+											<ul class="requires">
+												{% for conflicts in version.conflicts %}
+												<li><span>{{ conflicts.target }}</span>: {{ conflicts.constraint.operator }} {{ conflicts.constraint.prettyString }}</li>
+												{% endfor %}
+											</ul>
+											{% endif %}
+											<!-- CONFLICTS -->
+
+											<!-- REPLACES -->
+											{% if version.replaces %}
+											<hr/>
+											<p>Replaces</p>
+
+											<ul class="requires">
+												{% for replaces in version.replaces %}
+												<li><span>{{ replaces.target }}</span>: {{ replaces.constraint.operator }} {{ replaces.constraint.prettyString }}</li>
+												{% endfor %}
+											</ul>
+											{% endif %}
+											<!-- REPLACES -->
+
+											<!-- DEVREQUIRES -->
+											{% if version.devRequires %}
+											<hr/>
+											<p>DevRequires</p>
+
+											<ul class="requires">
+												{% for devRequires in version.devRequires %}
+												<li><span>{{ devRequires.target }}</span>: {{ devRequires.constraint.operator }} {{ devRequires.constraint.prettyString }}</li>
+												{% endfor %}
+											</ul>
+											{% endif %}
+											<!-- DEVREQUIRES -->
+
+											<!-- SUGGESTS -->
+											{% if version.suggests %}
+											<hr/>
+											<p>Suggests</p>
+
+											<ul class="requires">
+												{% for sugname, suggests in version.suggests %}
+												<li><span>{{ sugname }}</span>: {{ suggests }}</li>
+												{% endfor %}
+											</ul>
+											{% endif %}
+											<!-- SUGGESTS -->
+
+										</div>
+									</div>
+									{% endfor %}
+								</div>
+							</div>
+							<!--
+							<table>
+								{% if package.highest.homepage %}
+									<tr>
+										<th>Homepage</th>
+										<td><a href="{{ package.highest.homepage }}">{{ package.highest.homepage }}</a></td>
+									</tr>
+								{% endif %}
+								{% if package.highest.license %}
+									<tr>
+										<th>License</th>
+										<td>{{ package.highest.license|join(', ') }}</td>
+									</tr>
+								{% endif %}
+								{% if package.highest.authors %}
+									<tr>
+										<th>Authors</th>
+										<td>
+											{% for author in package.highest.authors %}
+												{%- if author.homepage -%}
+													<a href="{{ author.homepage }}">{{ author.name }}</a>
+												{%- else -%}
+													{{ author.name }}
+												{%- endif -%}
+												{%- if not loop.last -%}, {% endif -%}
+											{% endfor %}
+										</td>
+									</tr>
+								{% endif %}
+								<tr>
+									<th>Releases</th>
+									<td>
+										{% for version in package.versions %}
+											{%- if version.distType -%}
+												<a href="{{ version.distUrl }}" title="{{ version.distReference }}">{{ version.prettyVersion }}</a>
+											{%- else -%}
+												<a href="{{ version.sourceUrl }}" title="{{ version.sourceReference }}">{{ version.prettyVersion }}</a>
+											{%- endif -%}
+											{%- if not loop.last -%}, {% endif -%}
+										{% endfor %}
+									</td>
+								</tr>
+							</table>
+							-->
+						</div>
+					{% endfor %}
+				</div>
+				<div class="details">
+					asd
+				</div>
             </div>
-        </div>
-        <div id="ft">
-            <p><small>This Composer Repository is proudly powered by <a href="https://github.com/composer/satis">Satis</a> {{ constant('Composer\\Satis\\Satis::VERSION') }} - Last updated:  {{ "now"|date(constant('\DateTime::ISO8601')) }}</small></p>
         </div>
     </div>
 
     <script>
     {% include 'jquery-2.0.0.js' %}
     $(function(){
-        var packages = $('h3').each(function(){
+        var packages = $('h3.details-h3').each(function(){
             var desc = $(this).next('p'),
                 info = desc.length ? desc.next('table') : $(this).next('table');
             $(this).data('desc', desc);
             $(this).data('info', info);
         });
+
         $('input#search').keyup(function(){
+			jQuery('.packages').show();
+
             var needle = $(this).val().toLowerCase(), show;
             packages.each(function(){
                 show = $(this).text().toLowerCase().indexOf(needle) != -1;
-                $(this).toggle(show);
+                $(this).parent().toggle(show);
                 $(this).data('desc').toggle(show);
                 $(this).data('info').toggle(show);
             });
-        }).focus();
+
+			jQuery('.details').hide();
+			jQuery('.detail').hide();
+        });
+
+		jQuery(document).on('click', '.package', function () {
+
+			var version = '';
+			if (location.hash.indexOf('@') != -1) {
+				var splitted = location.hash.split('@');
+				version = '@' + splitted[1];
+			}
+
+
+			location.hash = "#!" + jQuery(this).find('h3:eq(0)').html() + version;
+			jQuery('.packages').hide();
+			jQuery('.details').show();
+
+			var detail = jQuery(this).find('.detail').html();
+			jQuery('.details').html(detail);
+		});
+
+		jQuery('.requires li span').each(function () {
+			var name = jQuery(this).text();
+			var span = jQuery(this);
+
+			$('h3.details-h3').each(function(){
+				if (jQuery(this).text().indexOf(name) != -1) {
+					var old = span.html()
+					span.html('<a href="#!'+name+'" class="package-link">' + old + '</a>');
+				}
+			});
+		})
+
+		jQuery(document).on('click', '.package-link', function () {
+			loadPage();
+		})
     });
+
+	jQuery(document).ready(function () {
+		loadPage();
+
+
+		jQuery(document).on('click', '.keyword', function () {
+			$('input#search').val(jQuery(this).text()).keyup();
+			$('input#search').val('');
+		});
+	});
+
+	function loadPage() {
+
+		if (location.hash.indexOf('#!') == -1) {
+			jQuery('.packages').show();
+			jQuery('.detail').hide();
+			jQuery('.details').hide();
+			return;
+		}
+
+
+		var name    = location.hash.split('#!')[1];
+		var version = false;
+
+		if (name.indexOf('@') != -1) {
+			var splitted = name.split('@');
+			name = splitted[0];
+			version = splitted[1];
+		}
+
+		jQuery('h3.header').each(function(){
+			if (jQuery(this).text().toLowerCase().indexOf(name) != -1) {
+				jQuery(this).parent().click();
+
+				if (version != false) {
+
+					var ankorname = name.replace('/', '-') + '-' + version;
+
+					var ankor = jQuery('a[name="'+ankorname+'"]:eq(0)');
+					ankor.next().find('.version-detail').show();
+
+					jQuery('html,body').animate({scrollTop: ankor.next().find('h4').offset().top},'slow');
+				}
+			}
+		});
+
+		composeradd();
+	}
+
+
+	var hash = location.hash;
+	setInterval(function()
+	{
+		if (location.hash != hash)
+		{
+			hash = location.hash;
+			loadPage();
+		}
+	}, 100);
+
+	{% include 'script.js' %}
+
     </script>
 </body>
 </html>
