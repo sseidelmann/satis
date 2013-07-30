@@ -1,0 +1,14 @@
+{
+	"name": "TWT OXID Modules",
+	"homepage": "http://sseidelmann.composer.oxid-dev3.twt.intern/satis/web/",
+	"repositories": [
+		{ "type": "vcs", "url": "http://svn.twt.intern/oxid/user_dev/sseidelmann/repo/installer/" },
+		{ "type": "vcs", "url": "http://svn.twt.intern/oxid/user_dev/sseidelmann/repo/oxid/varnish" },
+		{ "type": "vcs", "url": "http://svn.twt.intern/oxid/user_dev/sseidelmann/repo/oxid/autoloader" },
+		{ "type": "vcs", "url": "http://svn.twt.intern/oxid/user_dev/sseidelmann/repo/oxid/theme" }
+	],
+	"minimum-stability": "dev",
+	"require-all": true,
+	"output-html": true,
+	"output-dir": "web/"
+}
